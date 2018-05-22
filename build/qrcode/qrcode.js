@@ -1,4 +1,4 @@
-import Detector from './qrcode/Detector';
+import Detector from './Detector';
 
 const qrcode = {};
 qrcode.imagedata = null;
@@ -166,8 +166,8 @@ qrcode.getPixel = function(x, y) {
   if (qrcode.height < y) {
     throw 'point error';
   }
-  point = x * 4 + y * qrcode.width * 4;
-  p =
+  var point = x * 4 + y * qrcode.width * 4;
+  var p =
     (qrcode.imagedata.data[point] * 33 +
       qrcode.imagedata.data[point + 1] * 34 +
       qrcode.imagedata.data[point + 2] * 33) /
@@ -273,8 +273,8 @@ Array.prototype.remove = function(from, to) {
 
 qrcode.orderBestPatterns = function(patterns) {
   function distance(pattern1, pattern2) {
-    xDiff = pattern1.X - pattern2.X;
-    yDiff = pattern1.Y - pattern2.Y;
+    const xDiff = pattern1.X - pattern2.X;
+    const yDiff = pattern1.Y - pattern2.Y;
     return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
   }
 

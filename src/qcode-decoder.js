@@ -1,47 +1,39 @@
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd)
-    define(['qrcode'], factory);
-  else if (typeof exports === 'object')
-    module.exports = factory(require('../build/qrcode'));
-  else root.QCodeDecoder = factory(qrcode);
-}(this, function (qrcode) {
-
 'use strict';
 
+const qrcode = require('./build/qrcode/qrcode');
 /**
  * Constructor for QCodeDecoder
  */
-function QCodeDecoder () {
-  if (!(this instanceof QCodeDecoder))
-    return new QCodeDecoder();
+function QCodeDecoder() {
+  if (!(this instanceof QCodeDecoder)) return new QCodeDecoder();
 
   this.timerCapture = null;
   this.canvasElem = null;
   this.stream = null;
-  this.videoConstraints = {video: true, audio: false};
+  this.videoConstraints = { video: true, audio: false };
 }
 
 /**
  * Verifies if canvas element is supported.
  */
-QCodeDecoder.prototype.isCanvasSupported = function () {
+QCodeDecoder.prototype.isCanvasSupported = function() {
   var elem = document.createElement('canvas');
 
   return !!(elem.getContext && elem.getContext('2d'));
 };
 
-
 /**
  * Normalizes and Verifies if the user has
  * getUserMedia enabled in the browser.
  */
-QCodeDecoder.prototype.hasGetUserMedia = function () {
-  navigator.getUserMedia = navigator.getUserMedia ||
-                           navigator.webkitGetUserMedia ||
-                           navigator.mozGetUserMedia ||
-                           navigator.msGetUserMedia;
+QCodeDecoder.prototype.hasGetUserMedia = function() {
+  navigator.getUserMedia =
+    navigator.getUserMedia ||
+    navigator.webkitGetUserMedia ||
+    navigator.mozGetUserMedia ||
+    navigator.msGetUserMedia;
 
-  return !!(navigator.getUserMedia);
+  return !!navigator.getUserMedia;
 };
 
 /**
@@ -63,11 +55,11 @@ QCodeDecoder.prototype.hasGetUserMedia = function () {
  * after the resize if width and height
  * provided.
  */
-QCodeDecoder.prototype._prepareCanvas = function (videoElem) {
+QCodeDecoder.prototype._prepareCanvas = function(videoElem) {
   if (!this.canvasElem) {
     this.canvasElem = document.createElement('canvas');
-    this.canvasElem.style.width = videoElem.videoWidth + "px";
-    this.canvasElem.style.height = videoElem.videoHeight + "px";
+    this.canvasElem.style.width = videoElem.videoWidth + 'px';
+    this.canvasElem.style.height = videoElem.videoHeight + 'px';
     this.canvasElem.width = videoElem.videoWidth;
     this.canvasElem.height = videoElem.videoHeight;
   }
@@ -86,33 +78,36 @@ QCodeDecoder.prototype._prepareCanvas = function (videoElem) {
  * @param  {Function} cb
  * @return {Object}      this
  */
-QCodeDecoder.prototype._captureToCanvas = function (videoElem, cb, once) {
-  if (this.timerCapture)
-    clearTimeout(this.timerCapture);
+QCodeDecoder.prototype._captureToCanvas = function(videoElem, cb, once) {
+  if (this.timerCapture) clearTimeout(this.timerCapture);
 
   if (videoElem.videoWidth && videoElem.videoHeight) {
-    if (!this.canvasElem)
-      this._prepareCanvas(videoElem);
+    if (!this.canvasElem) this._prepareCanvas(videoElem);
 
-    var gCtx = this.canvasElem.getContext("2d");
-    gCtx.clearRect(0, 0, videoElem.videoWidth,
-                         videoElem.videoHeight);
-    gCtx.drawImage(videoElem, 0, 0,
-                   videoElem.videoWidth,
-                   videoElem.videoHeight);
+    var gCtx = this.canvasElem.getContext('2d');
+    gCtx.clearRect(0, 0, videoElem.videoWidth, videoElem.videoHeight);
+    gCtx.drawImage(
+      videoElem,
+      0,
+      0,
+      videoElem.videoWidth,
+      videoElem.videoHeight
+    );
     try {
       cb(null, qrcode.decode());
 
       if (once) return;
-    } catch (err){
-      if (err !== "Couldn't find enough finder patterns")
-        cb(new Error(err));
+    } catch (err) {
+      if (err !== "Couldn't find enough finder patterns") cb(new Error(err));
     }
   }
 
-  this.timerCapture = setTimeout(function () {
-    this._captureToCanvas.call(this, videoElem, cb, once);
-  }.bind(this), 500);
+  this.timerCapture = setTimeout(
+    function() {
+      this._captureToCanvas.call(this, videoElem, cb, once);
+    }.bind(this),
+    500
+  );
 };
 
 /**
@@ -127,30 +122,36 @@ QCodeDecoder.prototype._captureToCanvas = function (videoElem, cb, once) {
  *                              called in case of
  *                              error
  */
-QCodeDecoder.prototype.decodeFromCamera = function (videoElem, cb, once) {
+QCodeDecoder.prototype.decodeFromCamera = function(videoElem, cb, once) {
   var scope = (this.stop(), this);
 
-  if (!this.hasGetUserMedia())
-    cb(new Error('Couldn\'t get video from camera'));
+  if (!this.hasGetUserMedia()) cb(new Error("Couldn't get video from camera"));
 
-  navigator.getUserMedia(this.videoConstraints, function (stream) {
-    videoElem.src = window.URL.createObjectURL(stream);
-    scope.videoElem = videoElem;
-    scope.stream = stream;
-    scope.videoDimensions = false;
+  navigator.getUserMedia(
+    this.videoConstraints,
+    function(stream) {
+      videoElem.src = window.URL.createObjectURL(stream);
+      scope.videoElem = videoElem;
+      scope.stream = stream;
+      scope.videoDimensions = false;
 
-    setTimeout(function () {
-      scope._captureToCanvas.call(scope, videoElem, cb, once);
-    }, 500);
-  }, cb);
+      setTimeout(function() {
+        scope._captureToCanvas.call(scope, videoElem, cb, once);
+      }, 500);
+    },
+    cb
+  );
 
   return this;
 };
 
-QCodeDecoder.prototype.decodeFromVideo = function (videoElem, cb, once) {
-  setTimeout(function () {
-    this._captureToCanvas.call(this, videoElem, cb, once);
-  }.bind(this), 500);
+QCodeDecoder.prototype.decodeFromVideo = function(videoElem, cb, once) {
+  setTimeout(
+    function() {
+      this._captureToCanvas.call(this, videoElem, cb, once);
+    }.bind(this),
+    500
+  );
 
   return this;
 };
@@ -161,16 +162,14 @@ QCodeDecoder.prototype.decodeFromVideo = function (videoElem, cb, once) {
  * @param  {Function} cb        callback
  * @return {Object}             this
  */
-QCodeDecoder.prototype.decodeFromImage = function (img, cb) {
+QCodeDecoder.prototype.decodeFromImage = function(img, cb) {
   if (+img.nodeType > 0 && !img.src)
     throw new Error('The ImageElement must contain a src');
 
   img = img.src ? img.src : img;
 
-  return (qrcode.decode(img, cb), this);
+  return qrcode.decode(img, cb), this;
 };
-
-
 
 /**
  * Releases a video stream that was being
@@ -201,15 +200,13 @@ QCodeDecoder.prototype.stop = function() {
  * video source you want to use (or false to use
  * the current default)
  */
-QCodeDecoder.prototype.setSourceId = function (sourceId) {
+QCodeDecoder.prototype.setSourceId = function(sourceId) {
   if (sourceId)
-    this.videoConstraints.video = { optional: [{ sourceId: sourceId }]};
-  else
-    this.videoConstraints.video = true;
+    this.videoConstraints.video = { optional: [{ sourceId: sourceId }] };
+  else this.videoConstraints.video = true;
 
   return this;
 };
-
 
 /**
  * Gets a list of all available video sources on
@@ -219,16 +216,17 @@ QCodeDecoder.prototype.setSourceId = function (sourceId) {
  * param) - a list containing all of the sources
  * that are of the 'video' kind.
  */
-QCodeDecoder.prototype.getVideoSources = function (cb) {
+QCodeDecoder.prototype.getVideoSources = function(cb) {
   var sources = [];
 
   if (!(MediaStreamTrack && MediaStreamTrack.getSources))
-    return cb(new Error('Current browser doest not support MediaStreamTrack.getSources'));
+    return cb(
+      new Error('Current browser doest not support MediaStreamTrack.getSources')
+    );
 
-  MediaStreamTrack.getSources(function (sourceInfos) {
+  MediaStreamTrack.getSources(function(sourceInfos) {
     sourceInfos.forEach(function(sourceInfo) {
-      if (sourceInfo.kind === 'video')
-        sources.push(sourceInfo);
+      if (sourceInfo.kind === 'video') sources.push(sourceInfo);
     });
     cb(null, sources);
   });
@@ -236,5 +234,4 @@ QCodeDecoder.prototype.getVideoSources = function (cb) {
   return this;
 };
 
-
-return QCodeDecoder; }));
+module.exports = QCodeDecoder;
